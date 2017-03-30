@@ -1,9 +1,32 @@
+
+#include <vector>
+#include <cmath>
 #include "tgaimage.h"
+#include "model.h"
+#include "geometry.h"
+#include "triangle.h"
+#include <stdio.h>   
+#include <stdlib.h>    
+#include <time.h>
+
 const TGAColor white = TGAColor(255, 255, 255, 255);
 
 const TGAColor rose = TGAColor(255, 0, 255, 255);
 
 const TGAColor bleu = TGAColor(0, 0, 255, 255);
+
+const TGAColor cyan = TGAColor(0, 100, 100, 100);
+
+const int width  = 800;
+const int height = 800;
+
+TGAColor randC(){
+	int a = rand() * 255 ;
+	int b = rand() * 255 ;
+	int c = rand() * 255;
+	
+	return TGAColor(0, a, b, c);
+}
 
 void line(TGAImage &img){
 
@@ -16,7 +39,7 @@ void line(TGAImage &img){
 
 
 }
-
+//attention a la taille entre chaque pixel
 void line(TGAImage &img,TGAColor c,int x,int y ,int xx,int yy){
 
     for (float t=0.; t<1.; t+=.01) {
@@ -36,6 +59,31 @@ void line2(TGAImage &image,TGAColor c,int x0,int y0 ,int x1,int y1){
 
 }
 
+void line3(TGAImage &image, TGAColor color, int x0, int y0, int x1, int y1) { 
+	int tmp=-1;
+    bool steep = false; 
+    if (std::abs(x0-x1)<std::abs(y0-y1)) { // if the line is steep, we transpose the image 
+        std::swap(x0, y0); 
+        std::swap(x1, y1); 
+        steep = true; 
+    } 
+    if (x0>x1) { // make it left-to-right 
+        std::swap(x0, x1); 
+        std::swap(y0, y1); 
+    } 
+    for (int x=x0; x<=x1; x++) { 
+        float t = (x-x0)/(float)(x1-x0); 
+        float y = y0*(1.-t) + y1*t;
+		
+        if (steep) { 
+            image.set(y, x, color); // if transposed, de-transpose 
+        } else { 
+            image.set(x, y, color); 
+        }
+		tmp = (int)y;  
+    } 
+}
+
 void fond(TGAImage &image){
 
     for(int i = 0 ; i < image.get_width();i++){
@@ -46,14 +94,103 @@ void fond(TGAImage &image){
 
 }
 
+void drawModel(Model mod,TGAImage img){
+	
+	
+}
+
+void triangle(Triangle tri,TGAImage &image){
+	
+	
+	
+	int x0=tri.x1 ,x1=tri.x2 ,x2=tri.x3 ;
+	int y0=tri.y1 ,y1=tri.y2 ,y2=tri.y3 ;
+	TGAColor color = tri.full;	
+	
+	line3(image,tri.edge1,x0,y0,x1,y1);
+	
+	line3(image,tri.edge2,x0,y0,x2,y2);
+	
+	line3(image,tri.edge3,x2,y2,x1,y1);
+	
+	int tmp=-1;
+     
+    for (int x=x0; x<=x1; x++) { 
+        float t = (x-x0)/(float)(x1-x0); 
+        float y = y0*(1.-t) + y1*t;
+		   
+    		line3(image,color,x,y,x2,y2);
+		tmp = (int)y;  
+    }
+}
+
 int main(int argc, char** argv) {
-    TGAImage image(800, 600, TGAImage::RGB);
-    fond(image);
-    line(image,white,130,210,420,100);
-    line2(image,bleu,0,130,100,100);
-    line2(image,bleu,400, 0, 800, 600);
-
-
+	
+	srand(time(NULL));
+	
+    TGAImage image(800, 600, TGAImage::RGB); // 130 200 100 300
+    /*
+    Triangle *tri= new Triangle(10,10,130,200,100,300,randC(),randC(),randC(),randC());   
+	Triangle *tri2= new Triangle(10,10,150,150,350,250,randC(),randC(),randC(),randC());
+	Triangle *tri3= new Triangle(450,550,600,600,350,250,randC(),randC(),randC(),randC());
+	
+    triangle(*tri,image);
+	triangle(*tri2,image);
+	triangle(*tri3,image);
+	
+	/*
+	line2(image,rose,10, 10, 150, 150);
+	line2(image,rose,150, 150, 350, 250);
+	line2(image,rose,10, 10, 350, 250);
+	
+    line3(image,bleu,600, 400, 130, 200);
+    line3(image,bleu,130, 200, 100, 300);
+    line3(image,bleu,600, 400, 100, 300);
+    
+//*/
+	//image.flip_vertically();
+	
+	Model *model = NULL;
+	
+	 model = new Model("objet/african_head.obj");
+	for (int i=0; i<model->nfaces(); i++) { 
+    std::vector<int> face = model->face(i); 
+    for (int j=0; j<3; j++) { 
+        Vec3f v0 = model->vert(face[j]); 
+        Vec3f v1 = model->vert(face[(j+1)%3]); 
+        int x0 = (v0.x+1.)*width/2.; 
+        int y0 = (v0.y+1.)*height/2.; 
+        int x1 = (v1.x+1.)*width/2.; 
+        int y1 = (v1.y+1.)*height/2.; 
+        line( image, white,x0, y0, x1, y1); 
+    }
+    
+    for (int i=0; i<model->nfaces(); i++) { 
+    std::vector<int> face = model->face(i); 
+    Vec2i screen_coords[6]; 
+    Vec3f world_coords[3]; 
+    for (int j=0; j<6; j=j+2) { 
+        Vec3f v = model->vert(face[j]); 
+        screen_coords[j] = ((v.x+1.)*width/2.);
+		screen_coords[j+1] = ( (v.y+1.)*height/2.); 
+       // world_coords[j]  = v; 
+    } 
+    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
+    n.normalize(); 
+  //  float intensity = n*100.;//n*light_dir; 
+   // if (intensity>0) { 
+   
+   Triangle tri = new Triangle(screen_coords[0]*,screen_coords[1]*,screen_coords[2]*,screen_coords[3]*,screen_coords[4]*,screen_coords[5]*,randC());
+   
+        triangle( tri,image ); 
+    //} 
+}
+	
+	//*// 
+}
+	
+	
+	
     image.write_tga_file("dessin.tga");
     return 0;
 }
