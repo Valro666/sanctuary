@@ -75,3 +75,19 @@ Triangle::	Triangle(int x1,int y1,int x2,int y2,int x3,int y3,TGAColor full, TGA
 	
 }
 
+Triangle::	Triangle(Vec2i s1,Vec2i s2,Vec2i s3,TGAColor full){
+	x1=s1.x;
+	x2=s1.x;
+	x3=s3.x;
+	
+	y1=s1.y;
+	y2=s2.y;
+	y3=s3.y;
+	
+	this->full=full;
+	this->edge1=full;
+	this->edge2=full;
+	this->edge3=full;
+	
+}
+

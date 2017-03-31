@@ -18,6 +18,7 @@ public:
 	Triangle(int x1,int y1,int x2,int y2,int x3,int y3,TGAColor full);
 	Triangle(int x1,int y1,int x2,int y2,int x3,int y3,TGAColor edge1,TGAColor edge2,TGAColor edge3);
 	Triangle(int x1,int y1,int x2,int y2,int x3,int y3,TGAColor full,TGAColor edge1,TGAColor edge2,TGAColor edge3);
+	Triangle(Vec2i s1,Vec2i s2,Vec2i s3,TGAColor full);
 	~Triangle();
 	
 	

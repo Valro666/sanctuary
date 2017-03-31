@@ -117,8 +117,7 @@ void triangle(Triangle tri,TGAImage &image){
      
     for (int x=x0; x<=x1; x++) { 
         float t = (x-x0)/(float)(x1-x0); 
-        float y = y0*(1.-t) + y1*t;
-		   
+        float y = y0*(1.-t) + y1*t; 
     		line3(image,color,x,y,x2,y2);
 		tmp = (int)y;  
     }
@@ -148,7 +147,6 @@ int main(int argc, char** argv) {
     line3(image,bleu,600, 400, 100, 300);
     
 //*/
-	//image.flip_vertically();
 	
 	Model *model = NULL;
 	
@@ -165,32 +163,27 @@ int main(int argc, char** argv) {
         line( image, white,x0, y0, x1, y1); 
     }
     
-    for (int i=0; i<model->nfaces(); i++) { 
+    
+	for (int i=0; i<model->nfaces(); i++) { 
+	
     std::vector<int> face = model->face(i); 
-    Vec2i screen_coords[6]; 
-    Vec3f world_coords[3]; 
-    for (int j=0; j<6; j=j+2) { 
-        Vec3f v = model->vert(face[j]); 
-        screen_coords[j] = ((v.x+1.)*width/2.);
-		screen_coords[j+1] = ( (v.y+1.)*height/2.); 
-       // world_coords[j]  = v; 
+    Vec2i screen_coords[3]; 
+    for (int j=0; j<3; j++) { 
+    
+        Vec3f world_coords = model->vert(face[j]); 
+        screen_coords[j] = Vec2i((world_coords.x+1.)*width/2., (world_coords.y+1.)*height/2.); 
     } 
-    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
-    n.normalize(); 
-  //  float intensity = n*100.;//n*light_dir; 
-   // if (intensity>0) { 
-   
-   Triangle tri = new Triangle(screen_coords[0]*,screen_coords[1]*,screen_coords[2]*,screen_coords[3]*,screen_coords[4]*,screen_coords[5]*,randC());
-   
-        triangle( tri,image ); 
-    //} 
+    
+    Triangle *tri = new Triangle(screen_coords[0].x,screen_coords[0].y, 
+	screen_coords[1].x,screen_coords[1].y, 
+	screen_coords[2].x,screen_coords[2].y,randC());
+    triangle(*tri, image); 
 }
-	
-	//*// 
+	 
 }
+	//*/
 	
-	
-	
+	image.flip_vertically();
     image.write_tga_file("dessin.tga");
     return 0;
 }
