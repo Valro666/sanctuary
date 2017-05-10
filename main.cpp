@@ -20,19 +20,18 @@
 #include <limits>
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
-
 const TGAColor rose = TGAColor(255, 0, 255, 255);
-
 const TGAColor bleu = TGAColor(0, 0, 255, 255);
-
 const TGAColor cyan = TGAColor(0, 100, 100, 100);
 
- float Zcam = 10;
- 
+float Zcam = 10;
 float za=0, zb=0 , zc=0;
 
 const int width  = 800;
 const int height = 800;
+
+Vec3f eye(1,1,3);
+Vec3f center(0,0,0);
 
 //typedef vec<2,  int> Vec2f;
 
@@ -198,9 +197,9 @@ void triangleBuff(Triangle tri,  float *buffer,TGAImage &image){
 	int y0=tri.y1 ,y1=tri.y2 ,y2=tri.y3 ;
 	TGAColor color = tri.full;	
 	
-//	line3(image,tri.edge1,x0,y0,x1,y1);
-//	line3(image,tri.edge2,x0,y0,x2,y2);
-//	line3(image,tri.edge3,x2,y2,x1,y1);
+	//line3(image,tri.edge1,x0,y0,x1,y1);
+	//line3(image,tri.edge2,x0,y0,x2,y2);
+	//line3(image,tri.edge3,x2,y2,x1,y1);
 	int xmin=x0 ,xmax=x2;
 	int ymin=y0 ,ymax=y2;
 	
@@ -221,20 +220,13 @@ void triangleBuff(Triangle tri,  float *buffer,TGAImage &image){
 			za=0, zb=0 ,zc=0 ;
 			if(bary2(tri,x,y)){
 				float z = tri.z1*za+tri.z2*zb+tri.z3*zc;
-				float mod =(1.-(z/Zcam));
-				//float mod =1;
-				z=z/(1-z/Zcam);
-				
+				//float mod =(1.-(z/Zcam));
+				float mod =1;
+				//z=z/(1-z/Zcam);		
 				float xx , yy;
-				
-				
-				
 				xx = x/mod;
-				yy = y/mod;
-				
-				
-				//printf("%f %f %f %d %f %f %f %f\n",z,Zcam,mod,x,xx,za,zb,zc);
-				
+				yy = y/mod;		
+				//printf("%f %f %f %d %f %f %f %f\n",z,Zcam,mod,x,xx,za,zb,zc);		
 				if(int(xx+yy*width)<=(width*height))
 				if (buffer[int(xx+yy*width)]<=z) {
                 buffer[int(xx+yy*width)] = z;
@@ -278,7 +270,31 @@ void triangle(Triangle tri,TGAImage &image){
 	line3(image,white,x2,y2,x1,y1);
 }
 
-//double buffer[width][height];
+Matrix viewport(int x, int y, int w, int h) {
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x+w/2.f;
+    m[1][3] = y+h/2.f;
+    m[2][3] = Zcam/2.f;
+
+    m[0][0] = w/2.f;
+    m[1][1] = h/2.f;
+    m[2][2] = Zcam/2.f;
+    return m;
+}
+
+Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
+    Vec3f z = (eye-center).normalize();
+    Vec3f x = (up^z).normalize();
+    Vec3f y = (z^x).normalize();
+    Matrix res = Matrix::identity(4);
+    for (int i=0; i<3; i++) {
+        res[0][i] = x[i];
+        res[1][i] = y[i];
+        res[2][i] = z[i];
+        res[i][3] = -center[i];
+    }
+    return res;
+}
 
 int main(int argc, char** argv) {
 	
@@ -291,10 +307,54 @@ int main(int argc, char** argv) {
 	if(argv[1]!=NULL){
 	Zcam = atoi(argv[1]);
 	}
-	
+	Matrix neo = viewport(10,10,10,10);
+
+	Vec3f test = Vec3f(neo);
+
 	srand(time(NULL));
 	
-    TGAImage image(800, 800, TGAImage::RGB); // 130 200 100 300
+    TGAImage image(800, 800, TGAImage::RGB);
+	Vec3f light_dir(0,0,-1);
+    //std::vector<int> buffer(width*height,-std::numeric_limits<int>::max());
+	//printf("fin buff \n");
+	float *buffer = new float[width*height];
+    for (int i=width*height; i--; buffer[i] = -std::numeric_limits<float>::max());
+	
+	for (int i=0; i<model->nfaces(); i++) { 
+    	std::vector<int> face = model->face(i); 
+    	Vec3f screen_coords[3]; 
+    	Vec3f world_coords[3]; 
+        
+   		for (int j=0; j<3; j++) { 
+       		Vec3f v = model->vert(face[j]); 
+       		//screen_coords[j] = Vec3f((v.x+1.)*width/2., (v.y+1.)*height/2.,v.z); 
+       		screen_coords[j] = Vec3f(Matrix(v)); 
+
+			//printf("%d %d %d\n",screen_coords[0],screen_coords[1],screen_coords[2]);
+       		world_coords[j]  = v; 
+		}
+    
+		Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
+    	n.normalize(); 
+    	float intensity = n*light_dir; 
+   
+   		if (intensity>0) { 
+	
+			Triangle *tri = new Triangle(screen_coords[0],screen_coords[1],screen_coords[2],
+			TGAColor(intensity*255, intensity*255, intensity*255, 255));//*/
+			triangleBuff(*tri,buffer, image); 
+    	} 
+	}	
+	image.flip_vertically();
+    image.write_tga_file("dessin.tga");
+    return 0;
+}
+
+
+
+
+
+	// 130 200 100 300
     /*
     Triangle *tri= new Triangle(10,10,130,200,100,300,randC(),randC(),randC(),randC());   
 	Triangle *tri2= new Triangle(10,10,150,150,350,250,randC(),randC(),randC(),randC());
@@ -311,48 +371,5 @@ int main(int argc, char** argv) {
 	
     line3(image,bleu,600, 400, 130, 200);
     line3(image,bleu,130, 200, 100, 300);
-    line3(image,bleu,600, 400, 100, 300);
-    
-//*/
-	
-	
-	Vec3f light_dir(0,0,-1);
-    //std::vector<int> buffer(width*height,-std::numeric_limits<int>::max());
-	//printf("fin buff \n");
-	float *buffer = new float[width*height];
-    for (int i=width*height; i--; buffer[i] = -std::numeric_limits<float>::max());
-	
-	for (int i=0; i<model->nfaces(); i++) { 
-    	std::vector<int> face = model->face(i); 
-    	Vec3f screen_coords[3]; 
-    	Vec3f world_coords[3]; 
-        
-   		for (int j=0; j<3; j++) { 
-       		Vec3f v = model->vert(face[j]); 
-       		screen_coords[j] = Vec3f((v.x+1.)*width/2., (v.y+1.)*height/2.,v.z); 
-       		world_coords[j]  = v; 
-		}
-    
-		Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
-    	n.normalize(); 
-    	float intensity = n*light_dir; 
-   
-   		if (intensity>0) { /*
-        	Triangle *tri = new Triangle(screen_coords[0].x,screen_coords[0].y, 
-			screen_coords[1].x,screen_coords[1].y, 
-			screen_coords[2].x,screen_coords[2].y,TGAColor(intensity*255, intensity*255, intensity*255, 255));
-			tri->setZ(screen_coords[0].z,screen_coords[1].z,screen_coords[2].z);//*/
-			
-			
-			Triangle *tri = new Triangle(screen_coords[0],screen_coords[1],screen_coords[2],
-			TGAColor(intensity*255, intensity*255, intensity*255, 255));//*/
-			
-			
-			triangleBuff(*tri,buffer, image); 
-    	} 
-	}
-	
-	image.flip_vertically();
-    image.write_tga_file("dessin.tga");
-    return 0;
-}
+    line3(image,bleu,600, 400, 100, 300);   
+	//*/
