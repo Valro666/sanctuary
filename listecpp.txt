@@ -2,3 +2,4 @@
 main.cpp  
 model.cpp  
 tgaimage.cpp  
+Triangle.cpp  
