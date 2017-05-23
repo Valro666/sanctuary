@@ -37,7 +37,7 @@ std::vector<Vec3f> texture;
 std::vector<Vec3f> vecteur;
 std::vector<Face> modele;
 
-Vec3f eye(0.5,0.5,1); // x y distance : position oeil  [0,1]
+Vec3f eye(0.25,0,1); // x y distance : position oeil  [0,1]
 Vec3f center(0,0,0); // x y z : coordonnée focus de l oeil [0,1]
 Vec3f light_src(0,0,-1); // x y z : [0,1]
 Vec3f varying_intensity;
@@ -332,25 +332,7 @@ float scalaire(Vec3f vec,Vec3f vec2){
 return norme;
 }
 
-Vec3f reflection(Triangle tri,Vec3f light){
-    float X = 0;
-    float Y = 0;
-    float Z = 0;
 
-    Vec3f norm ;
-    norm= normale(tri);
-
-    float val= scalaire(normale(tri),light);
-     val *=2;
-
-     norm.x = norm.x * val;
-     norm.y = norm.y * val;
-     norm.z = norm.z * val;
-
-     norm = norm - light;
-
-return norm;
-}
 
 
 void aff(Vec3f pts,TGAImage &image){
@@ -382,6 +364,43 @@ void aff(Vec3f pts,TGAImage &image){
 		}
 	}
 }
+
+Vec3f mult(Vec3f p , float i){
+	float x = p.x*i;
+	float y = p.y*i;
+	float z = p.z*i;
+	return Vec3f(x,y,z);
+}
+
+Vec3f normale2(Triangle tri){
+	Vec3f f1 = mult(vecteur[tri.face->n1],za);
+	Vec3f f2 = mult(vecteur[tri.face->n2],zb);
+	Vec3f f3 = mult(vecteur[tri.face->n3],zc);
+
+	Vec3f tot = f1+f2+f3;
+	return tot;
+}
+
+Vec3f reflection(Triangle tri,Vec3f light){
+    float X = 0;
+    float Y = 0;
+    float Z = 0;
+
+    Vec3f norm ;
+    norm= normale(tri);
+
+    float val= scalaire(normale(tri),light);
+     val *=2;
+
+     norm.x = norm.x * val;
+     norm.y = norm.y * val;
+     norm.z = norm.z * val;
+
+     norm = norm - light;
+
+return norm;
+}
+
 void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 
 	float intensity;
@@ -453,6 +472,7 @@ void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 				source.normalize();//= Vec3f(ViewPort*Projection*ModelView*Matrix(light_src));
 				// normale triangle
 				Vec3f N = normale(tri);
+				//Vec3f N = normale2(tri);
 				N.normalize();
 				// reflection lumiere
 				Vec3f ref = reflection(tri,source);
@@ -485,9 +505,25 @@ void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 					ty/=2;
 					
 					TGAColor couleur = TGAColor(255*intensity, 255*intensity, 255*intensity,255);
-
+					
 					buffer[int(xx+yy*width)] = z;
+					//printf("%f\n",tri.s1.x);
+
+					// recuperation de la texture mais ca marche pas 
+					int xture = za*texture[tri.face->t1-1].x+ zb*texture[tri.face->t2-1].x+ zc*texture[tri.face->t3-1].x;
+					int yture = za*texture[tri.face->t1-1].y+ zb*texture[tri.face->t2-1].y+ zc*texture[tri.face->t3-1].y;
+					TGAColor color = diffu.get(xture*1.25,height-(yture*0.50));
+					float rouge = color.r;
+					float vert = color.g;
+					float bleu = color.b;
+					rouge*=intensity;
+					vert*=intensity;
+					bleu*=intensity;
+					
+					//printf("%f %c %c\n",rouge,vert,bleu);
 					image.set(xx,yy, couleur);
+					//image.set(xx,yy, color);
+					//image.set(xx,yy, TGAColor(rouge,vert,bleu,255));
             	}
 			}
 		}
@@ -599,6 +635,7 @@ int main(int argc, char** argv) {
 	diffu.read_tga_file("objet/african_head_diffuse.tga");
 
 	int nb = nombreFace("objet/african_head.obj");
+	//int nb = nombreFace("objet/diablo.obj");
 
 	ModelView  = lookat(eye, center, Vec3f(0,1,0));
 	Matrix Projection = Matrix::identity(4);
