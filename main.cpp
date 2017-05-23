@@ -5,6 +5,7 @@
 #include "tgaimage.h"
 #include "model.h"
 #include "geometry3.h"
+//#include "geometry.h"
 //#include "geometry3.h"
 #include "triangle.h"
 #include <stdio.h>
@@ -38,26 +39,14 @@ std::vector<Face> modele;
 
 Vec3f eye(0.5,0.5,1); // x y distance : position oeil  [0,1]
 Vec3f center(0,0,0); // x y z : coordonnée focus de l oeil [0,1]
-Vec3f light_src(0,0,-0.5); // x y z : [0,1]
+Vec3f light_src(0,0,-1); // x y z : [0,1]
 Vec3f varying_intensity;
 
 Matrix ModelView  ;
 Matrix Projection;
 Matrix ViewPort  ;
 
-Model *model = NULL;
-
 TGAImage diffu ;
-
-//typedef vec<2,  int> Vec2f;
-/*
-virtual Vec4f vertex(int iface, int nthvert) {
-        varying_intensity[nthvert] = std::max(0.f, model->normal(iface, nthvert)*light_dir); // get diffuse lighting intensity
-        Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert)); // read the vertex from .obj file
-        return Viewport*Projection*ModelView*gl_Vertex; // transform it to screen coordinates
-    }*/
-
-
 
 void load_texture(std::string filename, const char *suffix, TGAImage &img) {
     std::string texfile(filename);
@@ -148,10 +137,6 @@ void fond(TGAImage &image){
 
 }
 
-void drawModel(Model mod,TGAImage img){
-
-
-}
  bool bary(Triangle tri,int x , int y){
 
 
@@ -203,25 +188,6 @@ void triangle2(Triangle tri,TGAImage &image){
 	line3(image,tri.edge1,x0,y0,x1,y1);
 	line3(image,tri.edge2,x0,y0,x2,y2);
 	line3(image,tri.edge3,x2,y2,x1,y1);
-/*
-	int xmin=x0 ,xmax=x2;
-	int ymin=y0 ,ymax=y2;
-
-
-	if(xmin>x1) xmin = x1;
-	if(xmin>x2) xmin = x2;
-	if(ymin>y1) ymin = y1;
-	if(ymin>y2) ymin = y2;
-
-	if(xmax<x0) xmax = x0;
-	if(xmax<x1) xmax = x1;
-	if(ymax<y0) ymax = y0;
-	if(ymax<y1) ymax = y1;
-
-	for(int x = xmin;x < xmax;x++)
-		for(int y = ymin;y<ymax;y++)
-			if(bary(tri,x,y)) image.set(x,y,color);//*/
-
 
 }
 
@@ -271,22 +237,6 @@ void triangleBuff(Triangle tri,  float *buffer,TGAImage &image){
 		}
 }
 
-
-/*
-Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
-    Vec3f s[2];
-    for (int i=2; i--; ) {
-        s[i][0] = C[i]-A[i];
-        s[i][1] = B[i]-A[i];
-        s[i][2] = A[i]-P[i];
-    }
-    Vec3f u = cross(s[0], s[1]);
-    return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    //if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
-    //    return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    //return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
-}
-*/
 void triangle(Triangle tri,TGAImage &image){
 
 	int x0=tri.x1 ,x1=tri.x2 ,x2=tri.x3 ;
@@ -348,10 +298,12 @@ Vec3f normale(Triangle tri){
     Y=Y/norme;
     Z=Z/norme;
 	
-	Vec3f n = (vecteur[tri.face->n1]+vecteur[tri.face->n2]+vecteur[tri.face->n3]);
-	n.normalize();
+	//Vec3f n = (vecteur[tri.face->n1]+vecteur[tri.face->n2]+vecteur[tri.face->n3]);
+	//n.normalize();
 
-return Vec3f(X,Y,Z);
+	Vec3f ff(X,Y,Z);
+	ff.normalize();
+	return ff;
 //return n;
 }
 
@@ -387,7 +339,6 @@ Vec3f reflection(Triangle tri,Vec3f light){
 
     Vec3f norm ;
     norm= normale(tri);
-	//Vec3f norm = (vecteur[tri.face->n1]+vecteur[tri.face->n2]+vecteur[tri.face->n3])*-1;
 
     float val= scalaire(normale(tri),light);
      val *=2;
@@ -403,12 +354,7 @@ return norm;
 
 
 void aff(Vec3f pts,TGAImage &image){
-	Vec3f truc = pts;//(ViewPort*Projection*ModelView*Matrix(pts));
-	//truc.normalize();
-	//printf("%f %f %f \n",pts.x,pts.y,pts.z);
-	//printf("%f %f %f \n",truc.x,truc.y,truc.z);
-	
-
+	Vec3f truc = pts;
 	int xmin = pts.x-50;
 	int xmax = pts.x+50;
 	int ymin = pts.y-50;
@@ -437,21 +383,8 @@ void aff(Vec3f pts,TGAImage &image){
 	}
 }
 void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
-	//if (tri.y1==tri.y2 && tri.y1==tri.y3) return;
-
-	//tri.s1 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s1));
-	//tri.s2 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s2));
-	//tri.s3 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s3));
-
-	//Vec3f s1 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s1));
-	//Vec3f s2 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s2));
-	//Vec3f s3 = Vec3f(ViewPort*Projection*ModelView*Matrix(tri.s3));
-
-	//printf("%f %f %f\n",tri.s1.x,tri.s2.x,tri.s3.x);
 
 	float intensity;
-	//int x0=tri.s1.x ,x1=tri.s2.x ,x2=tri.s3.x ;
-	//int y0=tri.s1.y ,y1=tri.s1.y ,y2=tri.s1.y ;
 
 	float x0=tri.x1 ,x1=tri.x2 ,x2=tri.x3 ;
 	float y0=tri.y1 ,y1=tri.y2 ,y2=tri.y3 ;
@@ -515,23 +448,6 @@ void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 				float tx = x0*za + x1*zb + x2*zc;
 				float ty = x0*za + x1*zb + x2*zc;
 
-				//Vec3f norme = (vecteur[tri.face->n1]+vecteur[tri.face->n2]+vecteur[tri.face->n3]);
-				Vec3f norme ;
-				norme = normale(tri);
-				norme.normalize();
-				Vec3f light_dst(xx,yy,z);
-				// Vec3f light_dst = tri.s1;
-				/* 
-				Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
-				n.normalize(); 
-				float intensity = n*light_dir;
-				*/
-				//Vec3f light = cross(light_src,light_dst);
-				Vec3f light = light_src;
-				light.normalize();
-				Vec3f reflec ;
-				reflec = reflection(tri,light);
-
 				//coordonnée source lumiere
 				Vec3f source = light_src;
 				source.normalize();//= Vec3f(ViewPort*Projection*ModelView*Matrix(light_src));
@@ -553,17 +469,11 @@ void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 				float is=10;
 
 				float R = renvoie*ir;
-				//float D = diffuse*id*scalaire(light_dir,norme);
 				float D = diffuse*id*scalaire(source,N);
 				float S = specule*is*pow(scalaire(ref,eye),brillance);
-				//float S = specule*is*pow(brillance,scalaire(reflec,eye));
 
                 intensity = R+D+S;
-				//intensity = R;
 
-				//intensity = 1;
-
-				//if(int(xx+yy*width)<(width*height))
 				if (buffer[int(xx+yy*width)]<=z) {
 
 					Vec3f tt = texture[(tri.face->t1)];
@@ -573,37 +483,17 @@ void triangleBuffIntense(Triangle tri,  float *buffer,TGAImage &image){
 					tx/=2;
 					int ty= tt.y-1+tt2.y-1;
 					ty/=2;
-
-					//printf("%f %f\n",tx,ty);
-
-					//int r = diffu.get(tx,ty).r*intensity;
-					//int v = diffu.get(tx,ty).g*intensity;
-					//int b = diffu.get(tx,ty).b*intensity;
-					//Vec3f truc = ViewPort*Projection*ModelView*Matrix(light_src);
-					//TGAColor couleur = TGAColor(r,v,b,255);
-					//TGAColor couleur = diffu.get(truc.x,truc.y);
-					//printf("%f %f %f\n",r,v,b);
 					
 					TGAColor couleur = TGAColor(255*intensity, 255*intensity, 255*intensity,255);
-					
-					//TGAColor couleur = TGAColor(255*z, 255*z, 255*z,255);
+
 					buffer[int(xx+yy*width)] = z;
 					image.set(xx,yy, couleur);
-					//image.set(truc.x,truc.y, rose);
-					//image.set(xx,yy, color);
             	}
 			}
 		}
 	}
 }
-/*
-Vec4f vertex(int iface, int nthvert) {
-        Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert)); // read the vertex from .obj file
-        gl_Vertex = Viewport*Projection*ModelView*gl_Vertex;     // transform it to screen coordinates
-        varying_intensity[nthvert] = std::max(0.f, model->normal(iface, nthvert)*light_dir); // get diffuse lighting intensity
-        return gl_Vertex;
-    }
-//*/
+
 
 int nombreFace(const char *filename){
 
@@ -706,62 +596,35 @@ int nombreFace(const char *filename){
 
 int main(int argc, char** argv) {
 
-	//model = new Model("objet/diablo.obj");
-	//model = new Model("objet/african_head.obj");
-	//model = new Model("objet/y-wing.obj"); // ne marche pas
-	//model = new Model("objet/imperial.obj"); // tres long et ne sais pas s il marche
-	//load_texture("objet/african_head","_diffuse.tga",diffu);
-
 	diffu.read_tga_file("objet/african_head_diffuse.tga");
-	//diffu.get(0,0);
-
-	//Face *face;
-	//Model::diffuse(Vec2f(1,1));
 
 	int nb = nombreFace("objet/african_head.obj");
-	//int nb = nombreFace("objet/diablo.obj");
-	//int nb = nombreFace("objet/y-wing.obj");
-	//int nb = nombreFace("objet/imperial.obj");
 
 	ModelView  = lookat(eye, center, Vec3f(0,1,0));
 	Matrix Projection = Matrix::identity(4);
 	Matrix ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
 
-	//diffu = new TGAImage("objet/african_head_diffuse.tga");
-
 	srand(time(NULL));
 
     TGAImage image(width, height, TGAImage::RGB);
-    //std::vector<int> buffer(width*height,-std::numeric_limits<int>::max());
-	//printf("fin buff \n");
 	
 	float *buffer = new float[width*height];
     for (int i=width*height; i--; buffer[i] = -std::numeric_limits<float>::max());
 
-	//Vec3f poule= Vec3f(ViewPort*Projection*ModelView*Matrix(light_src));
-	//printf("%f",poule.x);
-
 	for(int i=0; i<nb; i++){
-		//float intensity = n*light_dir;
-		//float intensity = 1;
+
 		Face f = modele[i];
 		Vec3f s1=sommet[f.s1-1];
-		//printf("%f %f %f\n",s1.x,s1.y,s1.z);
 		s1 = Vec3f(ViewPort*Projection*ModelView*Matrix(s1));
-		//printf("%f %f %f\n",s1.x,s1.y,s1.z);
 		Vec3f s2=sommet[f.s2-1];
 		s2 = Vec3f(ViewPort*Projection*ModelView*Matrix(s2));
-
 		Vec3f s3=sommet[f.s3-1];		
 		s3 = Vec3f(ViewPort*Projection*ModelView*Matrix(s3));
 
 		Triangle *tri = new Triangle(s1,s2,s3,f);//
 		triangleBuffIntense(*tri,buffer, image);
-		//triangleBuff(*tri,buffer, image);
-		//triangle2(*tri,image);
-	}
 
-	//aff(light_src,image);
+	}
 
 	image.flip_vertically();
     image.write_tga_file("dessin.tga");
